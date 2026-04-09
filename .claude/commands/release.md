@@ -41,19 +41,31 @@ git push origin main --tags
 #### リリースノートのフォーマット
 
 ```markdown
-## What's new
+## New
+- **変更の要約** — 補足説明
 
+## Improved
 - **変更の要約** — 補足説明
+
+## Fixed
 - **変更の要約** — 補足説明
-  - サブ項目がある場合はインデント
-- 小さな変更はボールドなしでも可
+
+## Internal
+- **変更の要約** — 補足説明
 
 **Full Changelog**: https://github.com/feb26/click-effect/compare/v{PREV_VERSION}...v{VERSION}
 ```
 
+カテゴリ:
+- **New**: ユーザー向けの新機能
+- **Improved**: 既存機能の改善
+- **Fixed**: バグ修正
+- **Internal**: ユーザーに直接関係ないもの（開発ツール、リファクタリングなど）
+
 ルール:
-- `## What's new` セクションのみ使う
+- 該当する変更がないカテゴリは省略する
 - 各項目は **ボールド** で変更の要約を書き、`—` (em dash) の後に補足説明
+- サブ項目がある場合はインデントする
 - ユーザー視点で書く（実装詳細ではなく、何が変わったか）
 - 末尾に必ず `**Full Changelog**` リンクを付ける（前バージョンとの比較）
 - 前バージョンは `git tag -l --sort=-v:refname | head -2 | tail -1` で取得する
