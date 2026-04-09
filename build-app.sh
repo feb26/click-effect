@@ -45,8 +45,15 @@ if [[ -d "Resources/AppIcon.iconset" ]]; then
     iconutil -c icns -o "${RESOURCES_DIR}/AppIcon.icns" "Resources/AppIcon.iconset"
 fi
 
-echo "==> Ad-hoc signing"
-codesign --force --deep --sign - "${BUNDLE_DIR}"
+# --- Code signing ---
+CERT_CN="ClickEffect Dev"
+if security find-identity -v -p codesigning 2>/dev/null | grep -q "${CERT_CN}"; then
+    echo "==> Signing with '${CERT_CN}'"
+    codesign --force --deep --sign "${CERT_CN}" "${BUNDLE_DIR}"
+else
+    echo "==> Ad-hoc signing (run ./setup-signing.sh for persistent identity)"
+    codesign --force --deep --sign - "${BUNDLE_DIR}"
+fi
 
 # Clear quarantine on the locally built bundle so `open` works without prompt.
 xattr -cr "${BUNDLE_DIR}" || true

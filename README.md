@@ -99,6 +99,21 @@ Sources/ClickEffect/
     BurstEffect.swift
 ```
 
+### Signing (recommended, one-time)
+
+By default the app is ad-hoc signed, which means macOS treats every
+rebuild as a new app and you must re-grant **Accessibility** permission
+each time. To avoid this, create a local self-signed certificate:
+
+```sh
+./setup-signing.sh   # one-time setup
+```
+
+After this, `./build-app.sh` automatically uses the certificate and
+Accessibility permission persists across rebuilds.
+
+### Build pipeline
+
 The build pipeline is plain SwiftPM:
 
 - `swift build` — debug build for development
