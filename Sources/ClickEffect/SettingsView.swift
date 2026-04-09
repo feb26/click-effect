@@ -5,28 +5,30 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
-            Section("Effect") {
+            Section("Click Effect") {
                 Picker("Style", selection: $store.effectKind) {
                     ForEach(EffectKind.allCases, id: \.self) { kind in
                         Text(kind.rawValue.capitalized).tag(kind)
                     }
                 }
+
+                ColorPicker("Left click color", selection: $store.leftColor, supportsOpacity: false)
+                ColorPicker("Right click color", selection: $store.rightColor, supportsOpacity: false)
+
+                scaleSlider(label: "Size", value: $store.sizeScale)
+                scaleSlider(label: "Speed", value: $store.speedScale)
             }
 
-            Section("Colors") {
-                ColorPicker("Left click", selection: $store.leftColor, supportsOpacity: false)
-                ColorPicker("Right click", selection: $store.rightColor, supportsOpacity: false)
+            Section("Cursor") {
+                Toggle("Cursor highlight", isOn: $store.enableCursorHighlight)
+                if store.enableCursorHighlight {
+                    scaleSlider(label: "Highlight size", value: $store.cursorHighlightSize)
+                }
+
+                Toggle("Drag trail", isOn: $store.enableDragTrail)
             }
 
-            Section("Size") {
-                scaleSlider(value: $store.sizeScale)
-            }
-
-            Section("Speed") {
-                scaleSlider(value: $store.speedScale)
-            }
-
-            Section("Juice (optional)") {
+            Section("Juice") {
                 Slider(value: $store.hueJitter, in: 0...60) {
                     Text("Hue randomness")
                 } minimumValueLabel: {
@@ -90,13 +92,13 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 420, height: 620)
+        .frame(width: 420, height: 680)
     }
 
     @ViewBuilder
-    private func scaleSlider(value: Binding<Double>) -> some View {
+    private func scaleSlider(label: String, value: Binding<Double>) -> some View {
         Slider(value: value, in: 0.5...2.0) {
-            Text("Scale")
+            Text(label)
         } minimumValueLabel: {
             Text("0.5×").font(.caption).foregroundStyle(.secondary)
         } maximumValueLabel: {

@@ -23,6 +23,16 @@ final class OverlayController {
     var rotationJitter: CGFloat = 0  // degrees, 0...180
     var comboBoost: CGFloat = 0      // strength, 0...1
 
+    // Cursor highlight
+    var enableCursorHighlight: Bool = false {
+        didSet { if !enableCursorHighlight { hideAllHighlights() } }
+    }
+    var cursorHighlightSize: CGFloat = 1.0
+
+    // Drag trail
+    var enableDragTrail: Bool = false
+    private var lastTrailPoint: CGPoint = .zero
+
     // Combo tracking. Window is generous enough that casual rapid-fire
     // clicking actually chains.
     private var lastClickTime: CFTimeInterval = 0
@@ -127,6 +137,71 @@ final class OverlayController {
         if newHue < 0 { newHue += 1 }
         if newHue > 1 { newHue -= 1 }
         return NSColor(hue: newHue, saturation: s, brightness: b, alpha: a).cgColor
+    }
+
+    // MARK: - Cursor Highlight
+
+    func updateCursorHighlight(atGlobal globalPoint: CGPoint) {
+        guard enableCursorHighlight else { return }
+        guard let (window, localPoint) = windowAndLocalPoint(for: globalPoint) else {
+            return
+        }
+        let radius: CGFloat = 20 * cursorHighlightSize
+        window.updateHighlight(at: localPoint, color: leftColor, radius: radius)
+        window.setHighlightVisible(true)
+
+        // Hide highlight on other screens
+        for w in windows where w !== window {
+            w.setHighlightVisible(false)
+        }
+    }
+
+    private func hideAllHighlights() {
+        for w in windows {
+            w.setHighlightVisible(false)
+        }
+    }
+
+    // MARK: - Drag Trail
+
+    func playDragTrail(atGlobal globalPoint: CGPoint, button: MouseButton) {
+        guard enableDragTrail else { return }
+
+        // Throttle: only draw if moved at least 4px from last point
+        let dx = globalPoint.x - lastTrailPoint.x
+        let dy = globalPoint.y - lastTrailPoint.y
+        guard dx * dx + dy * dy >= 16 else { return }
+        lastTrailPoint = globalPoint
+
+        guard let (window, localPoint) = windowAndLocalPoint(for: globalPoint) else {
+            return
+        }
+        guard let host = window.hostLayer else { return }
+
+        let baseColor = (button == .left) ? leftColor : rightColor
+        let dotRadius: CGFloat = 3 * sizeScale
+        let dot = CALayer()
+        dot.frame = CGRect(
+            x: localPoint.x - dotRadius,
+            y: localPoint.y - dotRadius,
+            width: dotRadius * 2,
+            height: dotRadius * 2
+        )
+        dot.cornerRadius = dotRadius
+        dot.backgroundColor = baseColor.copy(alpha: 0.6)
+        host.addSublayer(dot)
+
+        let fade = CABasicAnimation(keyPath: "opacity")
+        fade.fromValue = 0.6
+        fade.toValue = 0.0
+        fade.duration = 0.4
+        fade.isRemovedOnCompletion = false
+        fade.fillMode = .forwards
+
+        CATransaction.begin()
+        CATransaction.setCompletionBlock { dot.removeFromSuperlayer() }
+        dot.add(fade, forKey: "fade")
+        CATransaction.commit()
     }
 
     // MARK: - Geometry

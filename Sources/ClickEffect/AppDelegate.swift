@@ -35,6 +35,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         controller.sizeJitter = CGFloat(settings.sizeJitter)
         controller.rotationJitter = CGFloat(settings.rotationJitter)
         controller.comboBoost = CGFloat(settings.comboBoost)
+        controller.enableCursorHighlight = settings.enableCursorHighlight
+        controller.cursorHighlightSize = CGFloat(settings.cursorHighlightSize)
+        controller.enableDragTrail = settings.enableDragTrail
 
         self.overlayController = controller
 
@@ -42,6 +45,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let tap = EventTap { [weak controller] point, button in
             controller?.playEffect(atGlobal: point, button: button)
+        }
+        tap.onMouseMoved = { [weak controller] point in
+            controller?.updateCursorHighlight(atGlobal: point)
+        }
+        tap.onMouseDragged = { [weak controller] point, button in
+            controller?.playDragTrail(atGlobal: point, button: button)
         }
         if !tap.start() {
             FileHandle.standardError.write(Data(
@@ -90,6 +99,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             .store(in: &settingsCancellables)
         settings.$comboBoost
             .sink { [weak controller] value in controller?.comboBoost = CGFloat(value) }
+            .store(in: &settingsCancellables)
+
+        settings.$enableCursorHighlight
+            .sink { [weak controller] value in controller?.enableCursorHighlight = value }
+            .store(in: &settingsCancellables)
+        settings.$cursorHighlightSize
+            .sink { [weak controller] value in controller?.cursorHighlightSize = CGFloat(value) }
+            .store(in: &settingsCancellables)
+        settings.$enableDragTrail
+            .sink { [weak controller] value in controller?.enableDragTrail = value }
             .store(in: &settingsCancellables)
     }
 

@@ -1,12 +1,14 @@
 import AppKit
 import CoreGraphics
 
-/// Global mouse click listener built on CGEventTap.
+/// Global mouse event listener built on CGEventTap.
 /// Requires Accessibility permission.
 final class EventTap {
     private var tap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
     private let onClick: (CGPoint, MouseButton) -> Void
+    var onMouseMoved: ((CGPoint) -> Void)?
+    var onMouseDragged: ((CGPoint, MouseButton) -> Void)?
     var isEnabled: Bool = true
 
     init(onClick: @escaping (CGPoint, MouseButton) -> Void) {
@@ -17,6 +19,9 @@ final class EventTap {
     func start() -> Bool {
         let mask = (1 << CGEventType.leftMouseDown.rawValue)
                  | (1 << CGEventType.rightMouseDown.rawValue)
+                 | (1 << CGEventType.mouseMoved.rawValue)
+                 | (1 << CGEventType.leftMouseDragged.rawValue)
+                 | (1 << CGEventType.rightMouseDragged.rawValue)
 
         let callback: CGEventTapCallBack = { _, type, event, refcon in
             guard let refcon else { return Unmanaged.passUnretained(event) }
@@ -33,18 +38,28 @@ final class EventTap {
                 return Unmanaged.passUnretained(event)
             }
 
-            let button: MouseButton?
-            switch type {
-            case .leftMouseDown:  button = .left
-            case .rightMouseDown: button = .right
-            default:              button = nil
-            }
+            let location = event.location
 
-            if let button {
-                let location = event.location
+            switch type {
+            case .leftMouseDown, .rightMouseDown:
+                let button: MouseButton = (type == .leftMouseDown) ? .left : .right
                 DispatchQueue.main.async {
                     tap.onClick(location, button)
                 }
+            case .mouseMoved:
+                if let handler = tap.onMouseMoved {
+                    DispatchQueue.main.async { handler(location) }
+                }
+            case .leftMouseDragged, .rightMouseDragged:
+                let button: MouseButton = (type == .leftMouseDragged) ? .left : .right
+                if let handler = tap.onMouseDragged {
+                    DispatchQueue.main.async { handler(location, button) }
+                }
+                if let handler = tap.onMouseMoved {
+                    DispatchQueue.main.async { handler(location) }
+                }
+            default:
+                break
             }
             return Unmanaged.passUnretained(event)
         }

@@ -18,7 +18,10 @@ final class SettingsStore: ObservableObject {
         static let hueJitter      = "ClickEffect.hueJitter"
         static let sizeJitter     = "ClickEffect.sizeJitter"
         static let rotationJitter = "ClickEffect.rotationJitter"
-        static let comboBoost     = "ClickEffect.comboBoost"
+        static let comboBoost            = "ClickEffect.comboBoost"
+        static let enableCursorHighlight = "ClickEffect.enableCursorHighlight"
+        static let cursorHighlightSize   = "ClickEffect.cursorHighlightSize"
+        static let enableDragTrail       = "ClickEffect.enableDragTrail"
     }
 
     // MARK: - Defaults
@@ -34,6 +37,11 @@ final class SettingsStore: ObservableObject {
     static let defaultSizeJitter:     Double = 0      // fraction, 0...0.5
     static let defaultRotationJitter: Double = 0      // degrees, 0...180
     static let defaultComboBoost:     Double = 0      // strength, 0...1
+
+    // Cursor & trail (default-off).
+    static let defaultEnableCursorHighlight: Bool = false
+    static let defaultCursorHighlightSize: Double = 1.0
+    static let defaultEnableDragTrail: Bool = false
 
     // MARK: - Published state
 
@@ -66,6 +74,16 @@ final class SettingsStore: ObservableObject {
         didSet { UserDefaults.standard.set(comboBoost, forKey: Key.comboBoost) }
     }
 
+    @Published var enableCursorHighlight: Bool {
+        didSet { UserDefaults.standard.set(enableCursorHighlight, forKey: Key.enableCursorHighlight) }
+    }
+    @Published var cursorHighlightSize: Double {
+        didSet { UserDefaults.standard.set(cursorHighlightSize, forKey: Key.cursorHighlightSize) }
+    }
+    @Published var enableDragTrail: Bool {
+        didSet { UserDefaults.standard.set(enableDragTrail, forKey: Key.enableDragTrail) }
+    }
+
     // MARK: - Init
 
     private init() {
@@ -90,6 +108,13 @@ final class SettingsStore: ObservableObject {
             ?? Self.defaultRotationJitter
         self.comboBoost = defaults.object(forKey: Key.comboBoost) as? Double
             ?? Self.defaultComboBoost
+
+        self.enableCursorHighlight = defaults.object(forKey: Key.enableCursorHighlight) as? Bool
+            ?? Self.defaultEnableCursorHighlight
+        self.cursorHighlightSize = defaults.object(forKey: Key.cursorHighlightSize) as? Double
+            ?? Self.defaultCursorHighlightSize
+        self.enableDragTrail = defaults.object(forKey: Key.enableDragTrail) as? Bool
+            ?? Self.defaultEnableDragTrail
     }
 
     // MARK: - Helpers
@@ -105,6 +130,10 @@ final class SettingsStore: ObservableObject {
         sizeJitter     = Self.defaultSizeJitter
         rotationJitter = Self.defaultRotationJitter
         comboBoost     = Self.defaultComboBoost
+
+        enableCursorHighlight = Self.defaultEnableCursorHighlight
+        cursorHighlightSize   = Self.defaultCursorHighlightSize
+        enableDragTrail       = Self.defaultEnableDragTrail
     }
 
     var leftCGColor: CGColor  { NSColor(leftColor).cgColor }
