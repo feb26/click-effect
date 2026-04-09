@@ -33,6 +33,9 @@ OPENSSL_CNF="${TMPDIR_CERT}/codesign.cnf"
 KEY_FILE="${TMPDIR_CERT}/key.pem"
 CERT_FILE="${TMPDIR_CERT}/cert.pem"
 P12_FILE="${TMPDIR_CERT}/codesign.p12"
+# Temporary passphrase for the PKCS12 bundle. This is only used during
+# the import and the .p12 file is deleted immediately after (via trap).
+# Not a secret — safe to have in source.
 P12_PASS="clickeffect-tmp"
 
 # --- OpenSSL config with Code Signing EKU ---

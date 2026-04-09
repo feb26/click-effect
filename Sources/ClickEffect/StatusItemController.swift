@@ -6,7 +6,7 @@ final class StatusItemController: NSObject {
     private let statusItem: NSStatusItem
     private let eventTap: EventTap
 
-    private let enabledKey = "ClickEffect.isEnabled"
+    private var enabledKey: String { SettingsStore.Key.isEnabled }
 
     init(eventTap: EventTap) {
         self.statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)

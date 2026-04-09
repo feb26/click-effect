@@ -3,9 +3,12 @@
 A small macOS menu bar app that shows a visual effect at your mouse pointer
 whenever you click. Handy for screen sharing, demos, and recordings.
 
-- Three built-in effects: **Ripple**, **Pulse**, **Burst**
+- **10 click effects**: Ripple, Pulse, Burst, Confetti, Sparks, Chrysanthemum, Crossette, Willow, Ring, Kamuro
+- **Cursor highlight** — persistent glow that follows your cursor
+- **Drag trail** — light dots along your drag path
 - Separate colors for left and right clicks
 - Adjustable size and speed
+- Juice options: hue/size/rotation randomness and combo boost
 - Launch at login
 - Menu bar only (no Dock icon)
 
@@ -44,10 +47,17 @@ For a Universal (Intel + Apple Silicon) build:
 Click the menu bar icon (`cursorarrow.rays`):
 
 - **Enabled** — toggle the effect on/off
-- **Effect** — switch between Ripple / Pulse / Burst
-- **Settings…** — adjust colors, size, and speed
+- **Settings…** — open the settings window
 - **Launch at Login** — start ClickEffect automatically on login
 - **Quit ClickEffect**
+
+### Settings
+
+| Section | Controls |
+|---------|----------|
+| **Click Effect** | Style picker, left/right click colors, size, speed |
+| **Cursor** | Cursor highlight toggle + size, drag trail toggle |
+| **Juice** | Hue/size/rotation randomness, combo boost |
 
 ## Distribution (Gatekeeper workaround)
 
@@ -84,7 +94,7 @@ Source layout:
 Sources/ClickEffect/
   main.swift              # entry point + CLI args
   AppDelegate.swift       # wiring
-  EventTap.swift          # CGEventTap for mouse clicks
+  EventTap.swift          # CGEventTap for mouse clicks, moves, and drags
   OverlayController.swift # per-screen overlay management
   OverlayWindow.swift     # borderless, click-through NSWindow
   StatusItemController.swift  # menu bar UI
@@ -97,6 +107,13 @@ Sources/ClickEffect/
     RippleEffect.swift
     PulseEffect.swift
     BurstEffect.swift
+    ConfettiEffect.swift
+    SparksEffect.swift
+    ChrysanthemumEffect.swift
+    CrossetteEffect.swift
+    WillowEffect.swift
+    RingEffect.swift
+    KamuroEffect.swift
 ```
 
 ### Signing (recommended, one-time)
@@ -120,3 +137,7 @@ The build pipeline is plain SwiftPM:
 - `./build-app.sh` — assembles `build/ClickEffect.app`
 - `swift Tools/generate-icon.swift` — regenerate `Resources/AppIcon.iconset`
   from the SF Symbol (run once; files are checked in)
+
+## License
+
+[MIT](LICENSE)

@@ -92,7 +92,7 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 420, height: 680)
+        .frame(width: 420, height: 700)
     }
 
     @ViewBuilder

@@ -36,8 +36,8 @@ final class OverlayWindow: NSWindow {
         let size: CGFloat = 40
         layer.frame = CGRect(x: 0, y: 0, width: size, height: size)
         layer.cornerRadius = size / 2
-        layer.backgroundColor = NSColor.systemCyan.withAlphaComponent(0.15).cgColor
-        layer.shadowColor = NSColor.systemCyan.cgColor
+        layer.backgroundColor = NSColor.clear.cgColor
+        layer.shadowColor = NSColor.clear.cgColor
         layer.shadowRadius = 12
         layer.shadowOpacity = 0.5
         layer.shadowOffset = .zero

@@ -19,6 +19,7 @@ struct CrossetteEffect: ClickEffect {
         let innerRadius = baseInnerRadius * config.sizeScale
         let speed = max(0.1, Double(config.speedScale))
         let duration = baseDuration / speed
+        let splitDelayScaled = splitDelay / speed
 
         let rayCount = min(16, max(4, Int(CGFloat(primaryRayCount) * config.intensity)))
 
@@ -33,7 +34,32 @@ struct CrossetteEffect: ClickEffect {
         hostLayer.addSublayer(container)
         let center = CGPoint(x: size / 2, y: size / 2)
 
-        // Phase 1: short rays fly outward from center to midRadius
+        let splitPoints = playPrimaryRays(
+            in: container, center: center, config: config,
+            rayCount: rayCount, innerRadius: innerRadius,
+            midRadius: midRadius, splitDelayScaled: splitDelayScaled
+        )
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + splitDelayScaled) {
+            self.playSubRays(
+                in: container, config: config, splitPoints: splitPoints,
+                outerRadius: outerRadius, midRadius: midRadius,
+                subDuration: (duration - splitDelayScaled) * 0.85
+            )
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + duration + 0.1) {
+            container.removeFromSuperlayer()
+        }
+    }
+
+    // MARK: - Phase 1: primary rays
+
+    private func playPrimaryRays(
+        in container: CALayer, center: CGPoint, config: EffectConfig,
+        rayCount: Int, innerRadius: CGFloat, midRadius: CGFloat,
+        splitDelayScaled: Double
+    ) -> [(CGPoint, CGFloat)] {
         var splitPoints: [(CGPoint, CGFloat)] = []
 
         for i in 0..<rayCount {
@@ -50,10 +76,8 @@ struct CrossetteEffect: ClickEffect {
                 x: center.x + cosA * midRadius,
                 y: center.y + sinA * midRadius
             )
-
             splitPoints.append((midPt, angle))
 
-            // Animate as a short line segment that travels outward
             let segLen: CGFloat = 4 * config.sizeScale
             let startPath = CGMutablePath()
             startPath.move(to: startPt)
@@ -75,94 +99,86 @@ struct CrossetteEffect: ClickEffect {
             pathAnim.fromValue = startPath
             pathAnim.toValue = endPath
 
-            let splitDelayScaled = splitDelay / speed
-            let group = CAAnimationGroup()
-            group.animations = [pathAnim]
-            group.duration = splitDelayScaled
-            group.timingFunction = CAMediaTimingFunction(name: .easeOut)
-            group.isRemovedOnCompletion = false
-            group.fillMode = .forwards
-
-            // Fade after arriving
             let fade = CABasicAnimation(keyPath: "opacity")
             fade.fromValue = 1.0
             fade.toValue = 0.0
             fade.beginTime = splitDelayScaled * 0.8
             fade.duration = splitDelayScaled * 0.4
 
-            let fullGroup = CAAnimationGroup()
-            fullGroup.animations = [pathAnim, fade]
-            fullGroup.duration = splitDelayScaled * 1.2
-            fullGroup.isRemovedOnCompletion = false
-            fullGroup.fillMode = .forwards
+            let group = CAAnimationGroup()
+            group.animations = [pathAnim, fade]
+            group.duration = splitDelayScaled * 1.2
+            group.isRemovedOnCompletion = false
+            group.fillMode = .forwards
 
-            ray.add(fullGroup, forKey: "fly")
+            ray.add(group, forKey: "fly")
             container.addSublayer(ray)
         }
 
-        // Phase 2: at each split point, spawn a small fan of sub-rays
-        let splitDelayScaled = splitDelay / speed
-        DispatchQueue.main.asyncAfter(deadline: .now() + splitDelayScaled) {
-            let subRayCount = 3
-            let subLength: CGFloat = (outerRadius - midRadius)
-            let subDuration = (duration - splitDelayScaled) * 0.85
+        return splitPoints
+    }
 
-            for (splitPt, baseAngle) in splitPoints {
-                let spread: CGFloat = .pi * 0.4
-                for j in 0..<subRayCount {
-                    let fraction = CGFloat(j) / CGFloat(subRayCount - 1) - 0.5
-                    let subAngle = baseAngle + fraction * spread
-                        + CGFloat.random(in: -0.08...0.08)
-                    let cosB = cos(subAngle)
-                    let sinB = sin(subAngle)
+    // MARK: - Phase 2: sub-rays at split points
 
-                    let subEnd = CGPoint(
-                        x: splitPt.x + cosB * subLength,
-                        y: splitPt.y + sinB * subLength
-                    )
+    private func playSubRays(
+        in container: CALayer, config: EffectConfig,
+        splitPoints: [(CGPoint, CGFloat)],
+        outerRadius: CGFloat, midRadius: CGFloat, subDuration: Double
+    ) {
+        let subRayCount = 3
+        let subLength = outerRadius - midRadius
 
-                    let segLen: CGFloat = 3 * config.sizeScale
-                    let startPath = CGMutablePath()
-                    startPath.move(to: splitPt)
-                    startPath.addLine(to: CGPoint(x: splitPt.x + cosB * segLen, y: splitPt.y + sinB * segLen))
+        for (splitPt, baseAngle) in splitPoints {
+            let spread: CGFloat = .pi * 0.4
+            for j in 0..<subRayCount {
+                let fraction = CGFloat(j) / CGFloat(subRayCount - 1) - 0.5
+                let subAngle = baseAngle + fraction * spread
+                    + CGFloat.random(in: -0.08...0.08)
+                let cosB = cos(subAngle)
+                let sinB = sin(subAngle)
 
-                    let endPath = CGMutablePath()
-                    endPath.move(to: CGPoint(x: subEnd.x - cosB * segLen, y: subEnd.y - sinB * segLen))
-                    endPath.addLine(to: subEnd)
+                let subEnd = CGPoint(
+                    x: splitPt.x + cosB * subLength,
+                    y: splitPt.y + sinB * subLength
+                )
 
-                    let ray = CAShapeLayer()
-                    ray.frame = container.bounds
-                    ray.path = startPath
-                    ray.strokeColor = config.color
-                    ray.lineWidth = lineWidth * 0.8
-                    ray.lineCap = .round
-                    ray.fillColor = nil
+                let segLen: CGFloat = 3 * config.sizeScale
+                let startPath = CGMutablePath()
+                startPath.move(to: splitPt)
+                startPath.addLine(to: CGPoint(x: splitPt.x + cosB * segLen, y: splitPt.y + sinB * segLen))
 
-                    let pathAnim = CABasicAnimation(keyPath: "path")
-                    pathAnim.fromValue = startPath
-                    pathAnim.toValue = endPath
+                let endPath = CGMutablePath()
+                endPath.move(to: CGPoint(x: subEnd.x - cosB * segLen, y: subEnd.y - sinB * segLen))
+                endPath.addLine(to: subEnd)
 
-                    let fadeOut = CABasicAnimation(keyPath: "opacity")
-                    fadeOut.fromValue = 1.0
-                    fadeOut.toValue = 0.0
-                    fadeOut.beginTime = subDuration * 0.4
-                    fadeOut.duration = subDuration * 0.6
+                let ray = CAShapeLayer()
+                ray.frame = container.bounds
+                ray.path = startPath
+                ray.strokeColor = config.color
+                ray.lineWidth = lineWidth * 0.8
+                ray.lineCap = .round
+                ray.fillColor = nil
 
-                    let sub = CAAnimationGroup()
-                    sub.animations = [pathAnim, fadeOut]
-                    sub.duration = subDuration
-                    sub.timingFunction = CAMediaTimingFunction(name: .easeOut)
-                    sub.isRemovedOnCompletion = false
-                    sub.fillMode = .forwards
+                let pathAnim = CABasicAnimation(keyPath: "path")
+                pathAnim.fromValue = startPath
+                pathAnim.toValue = endPath
 
-                    ray.add(sub, forKey: "split")
-                    container.addSublayer(ray)
-                }
+                let fadeOut = CABasicAnimation(keyPath: "opacity")
+                fadeOut.fromValue = 1.0
+                fadeOut.toValue = 0.0
+                fadeOut.beginTime = subDuration * 0.4
+                fadeOut.duration = subDuration * 0.6
+
+                let group = CAAnimationGroup()
+                group.animations = [pathAnim, fadeOut]
+                group.duration = subDuration
+                group.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                group.isRemovedOnCompletion = false
+                group.fillMode = .forwards
+
+                ray.add(group, forKey: "split")
+                container.addSublayer(ray)
             }
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + duration + 0.1) {
-            container.removeFromSuperlayer()
         }
     }
 }

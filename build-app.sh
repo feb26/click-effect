@@ -22,8 +22,6 @@ if [[ "${1:-}" == "--universal" ]]; then
 fi
 
 echo "==> Building (release, ${ARCH_ARGS[*]})"
-swift build -c release "${ARCH_ARGS[@]}"
-
 BIN_PATH=$(swift build -c release "${ARCH_ARGS[@]}" --show-bin-path)
 BINARY="${BIN_PATH}/${APP_NAME}"
 

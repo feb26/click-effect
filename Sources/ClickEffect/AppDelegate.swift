@@ -66,6 +66,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         print("[ClickEffect] Running. Use the menu bar icon to open settings or quit.")
     }
 
+    /// Binds SettingsStore properties to OverlayController via Combine.
+    /// When adding a new setting, update: (1) SettingsStore, (2) SettingsView,
+    /// (3) this method. See CONTRIBUTING.md for details.
     private func bindSettings(
         to controller: OverlayController,
         settings: SettingsStore

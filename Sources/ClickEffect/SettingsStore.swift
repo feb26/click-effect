@@ -9,7 +9,7 @@ final class SettingsStore: ObservableObject {
 
     // MARK: - Keys
 
-    private enum Key {
+    enum Key {
         static let leftColor      = "ClickEffect.leftColor"
         static let rightColor     = "ClickEffect.rightColor"
         static let sizeScale      = "ClickEffect.sizeScale"
@@ -22,6 +22,7 @@ final class SettingsStore: ObservableObject {
         static let enableCursorHighlight = "ClickEffect.enableCursorHighlight"
         static let cursorHighlightSize   = "ClickEffect.cursorHighlightSize"
         static let enableDragTrail       = "ClickEffect.enableDragTrail"
+        static let isEnabled             = "ClickEffect.isEnabled"
     }
 
     // MARK: - Defaults

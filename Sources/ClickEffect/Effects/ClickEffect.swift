@@ -3,15 +3,19 @@ import QuartzCore
 
 /// Runtime-tweakable parameters shared by all effects.
 struct EffectConfig {
+    /// Base color for the effect (may already include hue jitter).
     var color: CGColor
-    var sizeScale: CGFloat       // 1.0 = default
-    var speedScale: CGFloat      // 1.0 = default; higher = faster
+    /// User-controlled size multiplier (Settings slider, 0.5–2.0).
+    var sizeScale: CGFloat
+    /// User-controlled speed multiplier (Settings slider, 0.5–2.0).
+    /// Higher = faster animation.
+    var speedScale: CGFloat
     /// Maximum rotation in radians. 0 = no rotation. Each effect chooses
     /// how to use this (global orientation, per-element jitter, …).
     var rotationRange: CGFloat
-    /// Combo/hype multiplier (1.0 = baseline). Effects scale particle
-    /// count, ray count, brightness, etc. by this so rapid clicks
-    /// actually feel louder.
+    /// Combo/hype multiplier (1.0 = baseline). Driven by rapid-click
+    /// combo tracking. Effects should scale particle count, ray count,
+    /// brightness, etc. by this value.
     var intensity: CGFloat
 }
 
@@ -57,7 +61,7 @@ enum ParticleSprites {
 
     private static func makeSolid(size: Int, rounded: Bool) -> CGImage {
         let colorSpace = CGColorSpaceCreateDeviceRGB()
-        let ctx = CGContext(
+        guard let ctx = CGContext(
             data: nil,
             width: size,
             height: size,
@@ -65,7 +69,9 @@ enum ParticleSprites {
             bytesPerRow: 0,
             space: colorSpace,
             bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-        )!
+        ) else {
+            fatalError("Failed to create CGContext for \(size)×\(size) particle sprite")
+        }
         ctx.setFillColor(CGColor(red: 1, green: 1, blue: 1, alpha: 1))
         let rect = CGRect(x: 0, y: 0, width: size, height: size)
         if rounded {
@@ -73,6 +79,9 @@ enum ParticleSprites {
         } else {
             ctx.fill(rect)
         }
-        return ctx.makeImage()!
+        guard let image = ctx.makeImage() else {
+            fatalError("Failed to create CGImage from \(size)×\(size) particle sprite context")
+        }
+        return image
     }
 }
