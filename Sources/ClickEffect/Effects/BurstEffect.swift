@@ -5,7 +5,7 @@ import QuartzCore
 struct BurstEffect: ClickEffect {
     var baseRayCount: Int = 10
     var baseInnerRadius: CGFloat = 8
-    var baseOuterRadius: CGFloat = 34
+    var baseOuterRadius: CGFloat = 55
     var baseDuration: CFTimeInterval = 0.24
     var lineWidth: CGFloat = 2.5
 

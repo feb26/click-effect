@@ -3,7 +3,7 @@ import QuartzCore
 
 /// Filled translucent circle that scales up and fades out.
 struct PulseEffect: ClickEffect {
-    var baseRadius: CGFloat = 38
+    var baseRadius: CGFloat = 55
     var baseDuration: CFTimeInterval = 0.25
     var fillAlpha: CGFloat = 0.4
 

@@ -28,14 +28,24 @@ enum EffectKind: String, CaseIterable {
     case burst
     case confetti
     case sparks
+    case chrysanthemum
+    case crossette
+    case willow
+    case ring
+    case kamuro
 
     func make() -> ClickEffect {
         switch self {
-        case .ripple:   return RippleEffect()
-        case .pulse:    return PulseEffect()
-        case .burst:    return BurstEffect()
-        case .confetti: return ConfettiEffect()
-        case .sparks:   return SparksEffect()
+        case .ripple:         return RippleEffect()
+        case .pulse:          return PulseEffect()
+        case .burst:          return BurstEffect()
+        case .confetti:       return ConfettiEffect()
+        case .sparks:         return SparksEffect()
+        case .chrysanthemum:  return ChrysanthemumEffect()
+        case .crossette:      return CrossetteEffect()
+        case .willow:         return WillowEffect()
+        case .ring:           return RingEffect()
+        case .kamuro:         return KamuroEffect()
         }
     }
 }
