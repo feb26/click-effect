@@ -10,7 +10,8 @@ struct PulseEffect: ClickEffect {
     func play(at point: CGPoint, in hostLayer: CALayer, config: EffectConfig) {
         let radius = baseRadius * config.sizeScale
         let duration = baseDuration / max(0.1, Double(config.speedScale))
-        let fillColor = config.color.copy(alpha: fillAlpha) ?? config.color
+        let intensityAlpha = min(1.0, fillAlpha * max(1.0, config.intensity))
+        let fillColor = config.color.copy(alpha: intensityAlpha) ?? config.color
 
         let size = radius * 2
         let layer = CAShapeLayer()

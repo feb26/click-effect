@@ -20,7 +20,7 @@ final class SettingsWindowController: NSObject {
         window.title = "ClickEffect Settings"
         window.styleMask = [.titled, .closable, .miniaturizable]
         window.isReleasedWhenClosed = false
-        window.setContentSize(NSSize(width: 400, height: 520))
+        window.setContentSize(NSSize(width: 420, height: 720))
         window.center()
         self.window = window
 

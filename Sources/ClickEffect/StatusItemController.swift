@@ -1,20 +1,15 @@
 import AppKit
 
-/// Menu bar icon + dropdown menu for toggling, switching effects, settings,
-/// and login-at-startup.
+/// Menu bar icon + dropdown menu for toggling, opening settings, and
+/// login-at-startup. Effect selection lives in Settings.
 final class StatusItemController: NSObject {
     private let statusItem: NSStatusItem
-    private let overlayController: OverlayController
     private let eventTap: EventTap
 
     private let enabledKey = "ClickEffect.isEnabled"
-    private let effectKey = "ClickEffect.effectKind"
 
-    private var currentEffect: EffectKind = .ripple
-
-    init(overlayController: OverlayController, eventTap: EventTap, initialEffect: EffectKind) {
+    init(eventTap: EventTap) {
         self.statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        self.overlayController = overlayController
         self.eventTap = eventTap
         super.init()
 
@@ -23,10 +18,6 @@ final class StatusItemController: NSObject {
         if defaults.object(forKey: enabledKey) == nil {
             defaults.set(true, forKey: enabledKey)
         }
-        let storedEffect = defaults.string(forKey: effectKey).flatMap(EffectKind.init(rawValue:))
-        let effect = storedEffect ?? initialEffect
-        self.currentEffect = effect
-        overlayController.effect = effect.make()
         eventTap.isEnabled = defaults.bool(forKey: enabledKey)
 
         configureButton()
@@ -54,24 +45,6 @@ final class StatusItemController: NSObject {
         toggle.target = self
         toggle.state = eventTap.isEnabled ? .on : .off
         menu.addItem(toggle)
-
-        menu.addItem(.separator())
-
-        let header = NSMenuItem(title: "Effect", action: nil, keyEquivalent: "")
-        header.isEnabled = false
-        menu.addItem(header)
-
-        for kind in EffectKind.allCases {
-            let item = NSMenuItem(
-                title: "  " + kind.rawValue.capitalized,
-                action: #selector(selectEffect(_:)),
-                keyEquivalent: ""
-            )
-            item.target = self
-            item.representedObject = kind.rawValue
-            item.state = (kind == currentEffect) ? .on : .off
-            menu.addItem(item)
-        }
 
         menu.addItem(.separator())
 
@@ -105,15 +78,6 @@ final class StatusItemController: NSObject {
         let next = !eventTap.isEnabled
         eventTap.isEnabled = next
         UserDefaults.standard.set(next, forKey: enabledKey)
-        rebuildMenu()
-    }
-
-    @objc private func selectEffect(_ sender: NSMenuItem) {
-        guard let raw = sender.representedObject as? String,
-              let kind = EffectKind(rawValue: raw) else { return }
-        currentEffect = kind
-        overlayController.effect = kind.make()
-        UserDefaults.standard.set(raw, forKey: effectKey)
         rebuildMenu()
     }
 

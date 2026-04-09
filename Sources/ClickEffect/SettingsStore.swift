@@ -2,27 +2,38 @@ import AppKit
 import Combine
 import SwiftUI
 
-/// Observable, UserDefaults-backed settings.
-/// Effects and overlay read the plain CG values via the non-published
-/// helpers; SwiftUI binds to @Published Color wrappers.
+/// Observable, UserDefaults-backed settings. Everything visible in the
+/// Settings UI lives here.
 final class SettingsStore: ObservableObject {
     static let shared = SettingsStore()
 
     // MARK: - Keys
 
     private enum Key {
-        static let leftColor  = "ClickEffect.leftColor"
-        static let rightColor = "ClickEffect.rightColor"
-        static let sizeScale  = "ClickEffect.sizeScale"
-        static let speedScale = "ClickEffect.speedScale"
+        static let leftColor      = "ClickEffect.leftColor"
+        static let rightColor     = "ClickEffect.rightColor"
+        static let sizeScale      = "ClickEffect.sizeScale"
+        static let speedScale     = "ClickEffect.speedScale"
+        static let effectKind     = "ClickEffect.effectKind"
+        static let hueJitter      = "ClickEffect.hueJitter"
+        static let sizeJitter     = "ClickEffect.sizeJitter"
+        static let rotationJitter = "ClickEffect.rotationJitter"
+        static let comboBoost     = "ClickEffect.comboBoost"
     }
 
     // MARK: - Defaults
 
-    static let defaultLeftColor  = Color(nsColor: .systemCyan)
-    static let defaultRightColor = Color(nsColor: .systemPink)
-    static let defaultSizeScale: Double  = 1.0
+    static let defaultLeftColor   = Color(nsColor: .systemCyan)
+    static let defaultRightColor  = Color(nsColor: .systemPink)
+    static let defaultSizeScale:  Double = 1.0
     static let defaultSpeedScale: Double = 1.0
+    static let defaultEffectKind: EffectKind = .ripple
+
+    // Juice (all default-off so functionality always wins).
+    static let defaultHueJitter:      Double = 0      // degrees, 0...60
+    static let defaultSizeJitter:     Double = 0      // fraction, 0...0.5
+    static let defaultRotationJitter: Double = 0      // degrees, 0...180
+    static let defaultComboBoost:     Double = 0      // strength, 0...1
 
     // MARK: - Published state
 
@@ -38,6 +49,22 @@ final class SettingsStore: ObservableObject {
     @Published var speedScale: Double {
         didSet { UserDefaults.standard.set(speedScale, forKey: Key.speedScale) }
     }
+    @Published var effectKind: EffectKind {
+        didSet { UserDefaults.standard.set(effectKind.rawValue, forKey: Key.effectKind) }
+    }
+
+    @Published var hueJitter: Double {
+        didSet { UserDefaults.standard.set(hueJitter, forKey: Key.hueJitter) }
+    }
+    @Published var sizeJitter: Double {
+        didSet { UserDefaults.standard.set(sizeJitter, forKey: Key.sizeJitter) }
+    }
+    @Published var rotationJitter: Double {
+        didSet { UserDefaults.standard.set(rotationJitter, forKey: Key.rotationJitter) }
+    }
+    @Published var comboBoost: Double {
+        didSet { UserDefaults.standard.set(comboBoost, forKey: Key.comboBoost) }
+    }
 
     // MARK: - Init
 
@@ -51,15 +78,33 @@ final class SettingsStore: ObservableObject {
             ?? Self.defaultSizeScale
         self.speedScale = defaults.object(forKey: Key.speedScale) as? Double
             ?? Self.defaultSpeedScale
+        self.effectKind = defaults.string(forKey: Key.effectKind)
+            .flatMap(EffectKind.init(rawValue:))
+            ?? Self.defaultEffectKind
+
+        self.hueJitter = defaults.object(forKey: Key.hueJitter) as? Double
+            ?? Self.defaultHueJitter
+        self.sizeJitter = defaults.object(forKey: Key.sizeJitter) as? Double
+            ?? Self.defaultSizeJitter
+        self.rotationJitter = defaults.object(forKey: Key.rotationJitter) as? Double
+            ?? Self.defaultRotationJitter
+        self.comboBoost = defaults.object(forKey: Key.comboBoost) as? Double
+            ?? Self.defaultComboBoost
     }
 
     // MARK: - Helpers
 
     func resetToDefaults() {
-        leftColor  = Self.defaultLeftColor
-        rightColor = Self.defaultRightColor
-        sizeScale  = Self.defaultSizeScale
-        speedScale = Self.defaultSpeedScale
+        leftColor      = Self.defaultLeftColor
+        rightColor     = Self.defaultRightColor
+        sizeScale      = Self.defaultSizeScale
+        speedScale     = Self.defaultSpeedScale
+        effectKind     = Self.defaultEffectKind
+
+        hueJitter      = Self.defaultHueJitter
+        sizeJitter     = Self.defaultSizeJitter
+        rotationJitter = Self.defaultRotationJitter
+        comboBoost     = Self.defaultComboBoost
     }
 
     var leftCGColor: CGColor  { NSColor(leftColor).cgColor }

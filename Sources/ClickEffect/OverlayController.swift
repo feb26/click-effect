@@ -10,12 +10,25 @@ final class OverlayController {
     private var windows: [OverlayWindow] = []
     var effect: ClickEffect
 
-    /// Colors are driven externally by SettingsStore. sizeScale/speedScale
-    /// are also external; this struct is rebuilt on every playEffect call.
+    // Colors / scales are driven externally by SettingsStore. A new
+    // EffectConfig is built per click.
     var leftColor: CGColor
     var rightColor: CGColor
     var sizeScale: CGFloat = 1.0
     var speedScale: CGFloat = 1.0
+
+    // Juice controls (all default-off).
+    var hueJitter: CGFloat = 0       // degrees, 0...60
+    var sizeJitter: CGFloat = 0      // fraction, 0...0.5
+    var rotationJitter: CGFloat = 0  // degrees, 0...180
+    var comboBoost: CGFloat = 0      // strength, 0...1
+
+    // Combo tracking. Window is generous enough that casual rapid-fire
+    // clicking actually chains.
+    private var lastClickTime: CFTimeInterval = 0
+    private var comboCount: Int = 0
+    private let comboWindow: CFTimeInterval = 0.9
+    private let comboMaxHits: Int = 8
 
     init(effect: ClickEffect, leftColor: CGColor, rightColor: CGColor) {
         self.effect = effect
@@ -47,13 +60,76 @@ final class OverlayController {
         }
         guard let host = window.hostLayer else { return }
 
+        let baseColor = (button == .left) ? leftColor : rightColor
+        let color = jitterHue(baseColor, byDegrees: hueJitter)
+
+        let sizeNoise = (sizeJitter > 0)
+            ? CGFloat.random(in: (1 - sizeJitter)...(1 + sizeJitter))
+            : 1.0
+
+        let combo = advanceCombo(strength: comboBoost)
+        let effectiveSize = sizeScale * sizeNoise * combo.sizeMultiplier
+
+        let rotationRange = rotationJitter * .pi / 180  // deg → rad
+
         let config = EffectConfig(
-            color: button == .left ? leftColor : rightColor,
-            sizeScale: sizeScale,
-            speedScale: speedScale
+            color: color,
+            sizeScale: effectiveSize,
+            speedScale: speedScale,
+            rotationRange: rotationRange,
+            intensity: combo.intensity
         )
         effect.play(at: localPoint, in: host, config: config)
     }
+
+    // MARK: - Combo
+
+    private struct ComboResult {
+        var intensity: CGFloat
+        var sizeMultiplier: CGFloat
+    }
+
+    /// Advances (or resets) the combo counter. Returns both an intensity
+    /// multiplier (used by effects to boost particle/ray counts, brightness)
+    /// AND a direct size multiplier. At strength = 1 and max combo,
+    /// intensity reaches ~3.5× and size ~1.7×.
+    private func advanceCombo(strength: CGFloat) -> ComboResult {
+        guard strength > 0 else {
+            comboCount = 0
+            lastClickTime = 0
+            return ComboResult(intensity: 1, sizeMultiplier: 1)
+        }
+        let now = CACurrentMediaTime()
+        if now - lastClickTime < comboWindow {
+            comboCount = min(comboCount + 1, comboMaxHits)
+        } else {
+            comboCount = 0
+        }
+        lastClickTime = now
+        let fraction = CGFloat(comboCount) / CGFloat(comboMaxHits)
+        return ComboResult(
+            intensity: 1 + strength * 2.5 * fraction,
+            sizeMultiplier: 1 + strength * 0.7 * fraction
+        )
+    }
+
+    // MARK: - Hue jitter
+
+    private func jitterHue(_ cgColor: CGColor, byDegrees degrees: CGFloat) -> CGColor {
+        guard degrees > 0, let ns = NSColor(cgColor: cgColor) else {
+            return cgColor
+        }
+        let rgb = ns.usingColorSpace(.sRGB) ?? ns
+        var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        rgb.getHue(&h, saturation: &s, brightness: &b, alpha: &a)
+        let shift = CGFloat.random(in: -degrees...degrees) / 360
+        var newHue = h + shift
+        if newHue < 0 { newHue += 1 }
+        if newHue > 1 { newHue -= 1 }
+        return NSColor(hue: newHue, saturation: s, brightness: b, alpha: a).cgColor
+    }
+
+    // MARK: - Geometry
 
     private func windowAndLocalPoint(for globalCG: CGPoint) -> (OverlayWindow, CGPoint)? {
         for window in windows {

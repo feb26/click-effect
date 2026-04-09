@@ -27,7 +27,7 @@ struct RippleEffect: ClickEffect {
         )
         layer.fillColor = NSColor.clear.cgColor
         layer.strokeColor = config.color
-        layer.lineWidth = lineWidth
+        layer.lineWidth = lineWidth * min(2.5, max(1.0, config.intensity))
         layer.opacity = 1.0
 
         // Start at a small scale, grow to full.

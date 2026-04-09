@@ -3,7 +3,7 @@ import QuartzCore
 
 /// Short radial lines flying outward from the click point.
 struct BurstEffect: ClickEffect {
-    var rayCount: Int = 10
+    var baseRayCount: Int = 10
     var baseInnerRadius: CGFloat = 8
     var baseOuterRadius: CGFloat = 34
     var baseDuration: CFTimeInterval = 0.24
@@ -13,6 +13,13 @@ struct BurstEffect: ClickEffect {
         let innerRadius = baseInnerRadius * config.sizeScale
         let outerRadius = baseOuterRadius * config.sizeScale
         let duration = baseDuration / max(0.1, Double(config.speedScale))
+
+        // Intensity bumps ray count so combo clicks feel denser.
+        let rayCount = min(32, max(4, Int(CGFloat(baseRayCount) * config.intensity)))
+        let globalRotation = config.rotationRange > 0
+            ? CGFloat.random(in: -config.rotationRange...config.rotationRange)
+            : 0
+        let perRayJitter = config.rotationRange * 0.4
 
         // Container layer so we can remove all rays in one shot.
         let container = CALayer()
@@ -28,7 +35,10 @@ struct BurstEffect: ClickEffect {
         let innerPadding = 6 * config.sizeScale
 
         for i in 0..<rayCount {
-            let angle = (CGFloat(i) / CGFloat(rayCount)) * 2 * .pi
+            let baseAngle = (CGFloat(i) / CGFloat(rayCount)) * 2 * .pi + globalRotation
+            let angle = perRayJitter > 0
+                ? baseAngle + CGFloat.random(in: -perRayJitter...perRayJitter)
+                : baseAngle
             let cosA = cos(angle)
             let sinA = sin(angle)
 
